@@ -22,6 +22,7 @@ from flask_login import login_required, current_user
 from notifications_python_client.errors import HTTPError
 from notifications_utils.columns import Columns
 from notifications_utils.recipients import (
+    SMS_CHAR_COUNT_LIMIT,
     RecipientCSV,
     first_column_headings,
     optional_address_columns,
@@ -638,7 +639,7 @@ def get_template_error_dict(exception):
 
     return {
         'error': error,
-        'SMS_CHAR_COUNT_LIMIT': current_app.config['SMS_CHAR_COUNT_LIMIT'],
+        'SMS_CHAR_COUNT_LIMIT': SMS_CHAR_COUNT_LIMIT,
         'current_service': current_service,
 
         # used to trigger CSV specific err msg content, so not needed for single notification errors.
