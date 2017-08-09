@@ -97,11 +97,6 @@ build-codedeploy-artifact: ## Build the deploy artifact for CodeDeploy
 	mkdir -p target
 	zip -y -q -r -x@deploy-exclude.lst target/notifications-admin.zip ./
 
-.PHONY: upload-codedeploy-artifact ## Upload the deploy artifact for CodeDeploy
-upload-codedeploy-artifact: check-env-vars
-	$(if ${DEPLOY_BUILD_NUMBER},,$(error Must specify DEPLOY_BUILD_NUMBER))
-	aws s3 cp --region eu-west-1 --sse AES256 target/notifications-admin.zip s3://${DNS_NAME}-codedeploy/${CODEDEPLOY_PREFIX}-${DEPLOY_BUILD_NUMBER}.zip
-
 .PHONY: build-paas-artifact
 build-paas-artifact: build-codedeploy-artifact ## Build the deploy artifact for PaaS
 
@@ -114,27 +109,6 @@ upload-paas-artifact:
 .PHONY: test
 test: venv ## Run tests
 	./scripts/run_tests.sh
-
-.PHONY: deploy
-deploy: check-env-vars ## Upload deploy artifacts to S3 and trigger CodeDeploy
-	aws deploy create-deployment --application-name ${CODEDEPLOY_APP_NAME} --deployment-config-name CodeDeployDefault.OneAtATime --deployment-group-name ${CODEDEPLOY_APP_NAME} --s3-location bucket=${DNS_NAME}-codedeploy,key=${CODEDEPLOY_PREFIX}-${DEPLOY_BUILD_NUMBER}.zip,bundleType=zip --region eu-west-1
-
-.PHONY: check-aws-vars
-check-aws-vars: ## Check if AWS access keys are set
-	$(if ${AWS_ACCESS_KEY_ID},,$(error Must specify AWS_ACCESS_KEY_ID))
-	$(if ${AWS_SECRET_ACCESS_KEY},,$(error Must specify AWS_SECRET_ACCESS_KEY))
-
-.PHONY: deploy-suspend-autoscaling-processes
-deploy-suspend-autoscaling-processes: check-aws-vars ## Suspend launch and terminate processes for the auto-scaling group
-	aws autoscaling suspend-processes --region eu-west-1 --auto-scaling-group-name ${CODEDEPLOY_APP_NAME} --scaling-processes "Launch" "Terminate"
-
-.PHONY: deploy-resume-autoscaling-processes
-deploy-resume-autoscaling-processes: check-aws-vars ## Resume launch and terminate processes for the auto-scaling group
-	aws autoscaling resume-processes --region eu-west-1 --auto-scaling-group-name ${CODEDEPLOY_APP_NAME} --scaling-processes "Launch" "Terminate"
-
-.PHONY: deploy-check-autoscaling-processes
-deploy-check-autoscaling-processes: check-aws-vars ## Returns with the number of instances with active autoscaling events
-	@aws autoscaling describe-auto-scaling-groups --region eu-west-1 --auto-scaling-group-names ${CODEDEPLOY_APP_NAME} | jq '.AutoScalingGroups[0].Instances|map(select(.LifecycleState != "InService"))|length'
 
 .PHONY: coverage
 coverage: venv ## Create coverage report
