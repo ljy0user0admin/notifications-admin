@@ -1,5 +1,6 @@
 from flask_login import UserMixin, AnonymousUserMixin
 from flask import session
+from itertools import chain_from_iterable
 
 
 class User(UserMixin):
@@ -90,10 +91,14 @@ class User(UserMixin):
     def permissions(self, permissions):
         raise AttributeError("Read only property")
 
-    def has_permissions(self, permissions=[], any_=False, admin_override=False):
+    def has_permissions(self, *permissions, any_=False, admin_override=False):
 
         if not hasattr(permissions, '__iter__') or isinstance(permissions, str):
             raise TypeError('User permissions must be a non-string iterable (eg a list)')
+        print([p for p in permission for permission in permissions])
+        print(list(permissions))
+        permissions = list(chain_from_iterable(permissions))
+        print(permissions)
 
         # Only available to the platform admin user
         if admin_override and self.platform_admin:
