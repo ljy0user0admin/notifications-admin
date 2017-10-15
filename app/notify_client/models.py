@@ -91,6 +91,10 @@ class User(UserMixin):
         raise AttributeError("Read only property")
 
     def has_permissions(self, permissions=[], any_=False, admin_override=False):
+
+        if not hasattr(permissions, '__iter__') or isinstance(permissions, str):
+            raise TypeError('User permissions must be a non-string iterable (eg a list)')
+
         # Only available to the platform admin user
         if admin_override and self.platform_admin:
             return True
