@@ -1,6 +1,5 @@
 from flask_login import UserMixin, AnonymousUserMixin
 from flask import session
-from itertools import chain_from_iterable
 
 
 class User(UserMixin):
@@ -93,12 +92,7 @@ class User(UserMixin):
 
     def has_permissions(self, *permissions, any_=False, admin_override=False):
 
-        if not hasattr(permissions, '__iter__') or isinstance(permissions, str):
-            raise TypeError('User permissions must be a non-string iterable (eg a list)')
-        print([p for p in permission for permission in permissions])
-        print(list(permissions))
-        permissions = list(chain_from_iterable(permissions))
-        print(permissions)
+        permissions = set(flatten(permissions))
 
         # Only available to the platform admin user
         if admin_override and self.platform_admin:
@@ -165,8 +159,8 @@ class InvitedUser(object):
         self.status = status
         self.created_at = created_at
 
-    def has_permissions(self, permissions):
-        return set(self.permissions) > set(permissions)
+    def has_permissions(self, *permissions):
+        return set(self.permissions) > set(flatten(permissions))
 
     def __eq__(self, other):
         return ((self.id,
@@ -198,3 +192,12 @@ class AnonymousUser(AnonymousUserMixin):
     # set the anonymous user so that if a new browser hits us we don't error http://stackoverflow.com/a/19275188
     def logged_in_elsewhere(self):
         return False
+
+
+def flatten(iterable):
+    for x in iterable:
+        if hasattr(x, '__iter__') and not isinstance(x, str):
+            for y in flatten(x):
+                yield y
+        else:
+            yield x
