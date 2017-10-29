@@ -89,6 +89,45 @@ def get_example_letter_address(key):
     }.get(key, '')
 
 
+@main.route("/fullscreen")
+def fullscreen_row_errors():
+    recipients = RecipientCSV("""
+        phone_number,the quick,brown fox jumped, over the lazy dog,
+        07700,foo, bar, baz
+        07700,foo, bar, baz
+        07700,foo, bar, baz
+        07700,foo, bar, baz
+        07700,foo, bar, baz
+        07700,foo, bar, baz
+        07700,foo, bar, baz
+        07700,foo, bar, baz
+        07700900123,, bar, baz
+        07700,foo, bar, baz
+        07700900123,foo, bar, baz
+        07700900123,, bar, baz
+        07700900123,foo, bar, baz
+        07700,, bar, baz
+    """, template_type='sms', placeholders={'the quick'})
+    return render_template(
+        'views/check/row-errors.html',
+        recipients=recipients,
+        first_recipient='test@example.com',
+        template=None,
+        errors=recipients,
+        row_errors=get_errors_for_csv(recipients, 'sms'),
+        count_of_recipients=42,
+        count_of_displayed_recipients=999,
+        original_file_name='example.csv',
+        upload_id='1234',
+        form=CsvUploadForm(),
+        remaining_messages=1000000,
+        back_link='#',
+        help=False,
+        trying_to_send_letters_in_trial_mode=False,
+        required_recipient_columns={'phone_number'}
+    )
+
+
 @main.route("/services/<service_id>/send/<template_id>/csv", methods=['GET', 'POST'])
 @login_required
 @user_has_permissions('send_texts', 'send_emails', 'send_letters')
